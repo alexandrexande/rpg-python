@@ -288,3 +288,42 @@ class Jogo:
         print("\nAjuda — Carregar")
         print("- O carregamento aqui é apenas ilustrativo (sem leitura real).")
         print("- Use o nome que você “salvou” anteriormente para simular.")
+
+    def menu_inventario(self) -> None:
+        if not self.jogador: return
+
+        while True:
+            print("\n=== Inventário & Equipamentos ===")
+            # Mostra o que está no corpo
+            arma = self.jogador.equipamentos['arma'].nome if self.jogador.equipamentos['arma'] else "Mãos nuas"
+            armadura = self.jogador.equipamentos['armadura'].nome if self.jogador.equipamentos['armadura'] else "Roupas comuns"
+            
+            print(f"Equipado: [Arma: {arma}] [Corpo: {armadura}]")
+            print(f"Stats Totais: Ataque {self.jogador.ataque_total} | Defesa {self.jogador.defesa_total}")
+            
+            print("\nMochila:")
+            if not self.jogador.inventario:
+                print("(Vazia)")
+            else:
+                for i, item in enumerate(self.jogador.inventario):
+                    tipo = "Equip" if hasattr(item, 'slot') else "Poção"
+                    detalhes = f"ATK+{item.ataque_bonus}" if hasattr(item, 'ataque_bonus') else f"Efeito {item.valor_efeito}"
+                    print(f"[{i+1}] {item.nome} ({tipo} - {detalhes})")
+
+            print("\n[N] Digite o número do item para usar/equipar")
+            print("[0] Voltar")
+            
+            op = input("> ").strip()
+            if op == "0": break
+            
+            try:
+                idx = int(op) - 1
+                if 0 <= idx < len(self.jogador.inventario):
+                    item = self.jogador.inventario[idx]
+                    if hasattr(item, 'slot'):
+                        self.jogador.equipar_item(item)
+                    else:
+                        print(item.usar(self.jogador))
+                        self.jogador.inventario.pop(idx)
+            except ValueError:
+                pass

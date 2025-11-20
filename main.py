@@ -9,8 +9,9 @@ def menu() -> None:
         print("\n=== RPG OO — Menu Principal ===")
         print("[1] Criar personagem")
         print("[2] Encarar missão")
-        print("[3] Salvar")
-        print("[4] Carregar")
+        print("[3] Inventário")
+        print("[4] Salvar")
+        print("[5] Carregar")
         print("[0] Sair")
         op = input("> ").strip()
 
@@ -19,8 +20,10 @@ def menu() -> None:
         elif op == "2":
             jogo.menu_missao()
         elif op == "3":
-            jogo.menu_salvar()
+            jogo.menu_inventario()
         elif op == "4":
+            jogo.menu_salvar()
+        elif op == "5":
             jogo.menu_carregar()
         elif op == "0":
             print("Até logo!")
