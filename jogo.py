@@ -1,37 +1,48 @@
 from __future__ import annotations
-import glob  # <--- Necessário para listar arquivos na pasta
+import glob
 import json
+import time
+import random
 from models.personagem import Personagem, Guerreiro, Mago, Arqueiro
 from models.missao import Missao
-from models.inimigo import Inimigo
 from utils.repositorio import Repositorio
+
+# Cores para o terminal (opcional, para ficar bonito)
+class Cor:
+    VERMELHO = '\033[91m'
+    VERDE = '\033[92m'
+    AMARELO = '\033[93m'
+    AZUL = '\033[94m'
+    RESET = '\033[0m'
 
 class Jogo:
     def __init__(self) -> None:
-        # Agora 'self.jogador' guardará o Objeto real, não apenas um dicionário
         self.jogador: Personagem | None = None
         
-        # Dados temporários para o menu de criação
         self.dados_criacao = {
             "nome": "",
             "classe_str": ""
         }
         
+        # Configuração padrão
         self.missao_config = {
-            "dificuldade": "Fácil",
-            "cenario": "Trilha",
+            "dificuldade": "Média",
+            "cenario": "Floresta",
         }
         self._ultimo_save = None
 
+    # --------------------------------------------------------------------------
+    # MENU: CRIAÇÃO DE PERSONAGEM
+    # --------------------------------------------------------------------------
     def menu_criar_personagem(self) -> None:
         while True:
-            # Mostra os dados temporários ou o objeto já criado
             nome_exibir = self.dados_criacao["nome"] or "(não definido)"
             classe_exibir = self.dados_criacao["classe_str"] or "(não definido)"
             
             if self.jogador:
-                print(f"\nPersonagem Ativo: {self.jogador.nome} [{type(self.jogador).__name__}]")
-                print(f"HP: {self.jogador._atrib.vida} | ATK: {self.jogador._atrib.ataque} | MP: {self.jogador._atrib.mana}")
+                print(f"\nPersonagem Ativo: {Cor.AZUL}{self.jogador.nome}{Cor.RESET} [{type(self.jogador).__name__}]")
+                print(f"Nível: {self.jogador.nivel} | XP: {self.jogador.xp}")
+                print(f"HP: {self.jogador._atrib.vida}/{self.jogador._atrib.vida_max} | MP: {self.jogador._atrib.mana}")
             
             print("\n=== Criar/Substituir Personagem ===")
             print(f"Nome (rascunho): {nome_exibir}")
@@ -85,7 +96,6 @@ class Jogo:
             print("Erro: Defina NOME e CLASSE antes de confirmar.")
             return
 
-        # Lógica de Fábrica: Cria o objeto baseado na string
         if classe_str == "Guerreiro":
             self.jogador = Guerreiro(nome)
         elif classe_str == "Mago":
@@ -94,23 +104,23 @@ class Jogo:
             self.jogador = Arqueiro(nome)
         
         print(f"\n✨ Personagem {self.jogador.nome} criado com sucesso!")
-        print("Agora você tem atributos reais para jogar.")
 
     def _ajuda_criar_personagem(self) -> None:
         print("\nAjuda — Criar Personagem")
         print("- Defina um nome e um arquétipo para continuar.")
-        print("- Esta etapa não cria atributos reais; é apenas o fluxo do menu.")
-        print("- Implementações futuras podem usar essas escolhas para gerar status.")
+        print("- Ao confirmar, um novo personagem nível 1 será gerado.")
 
+    # --------------------------------------------------------------------------
+    # MENU: MISSÃO (COM MODO SOBREVIVÊNCIA)
+    # --------------------------------------------------------------------------
     def menu_missao(self) -> None:
         while True:
-            print("\n=== Missão ===")
-            print(f"Dificuldade atual: {self.missao_config['dificuldade']}")
-            print(f"Cenário atual:     {self.missao_config['cenario']}")
+            print("\n=== Missão & Combate ===")
+            print(f"Configuração Atual: [{self.missao_config['dificuldade']}] em [{self.missao_config['cenario']}]")
             print("[1] Escolher dificuldade")
             print("[2] Escolher cenário")
-            print("[3] Pré-visualizar missão")
-            print("[4] Iniciar missão (placeholder)")
+            print(f"[3] Iniciar Missão Única")
+            print(f"{Cor.VERMELHO}[5] ☠️  Modo Sobrevivência (Múltiplas Missões) ☠️{Cor.RESET}")
             print("[9] Ajuda")
             print("[0] Voltar")
             op = input("> ").strip()
@@ -120,9 +130,9 @@ class Jogo:
             elif op == "2":
                 self._escolher_cenario()
             elif op == "3":
-                self._preview_missao()
-            elif op == "4":
-                self._iniciar_missao_placeholder()
+                self._iniciar_missao_unica()
+            elif op == "5":
+                self._iniciar_modo_sobrevivencia()
             elif op == "9":
                 self._ajuda_missao()
             elif op == "0":
@@ -141,63 +151,114 @@ class Jogo:
         if dif:
             self.missao_config["dificuldade"] = dif
             print(f"Dificuldade definida: {dif}")
-        else:
-            print("Opção inválida.")
 
     def _escolher_cenario(self) -> None:
         print("\nCenários:")
-        print("[1] Trilha")
-        print("[2] Floresta")
+        print("[1] Floresta")
+        print("[2] Trilha")
         print("[3] Caverna")
         print("[4] Ruínas")
         op = input("> ").strip()
-        mapa = {"1": "Trilha", "2": "Floresta", "3": "Caverna", "4": "Ruínas"}
+        mapa = {"1": "Floresta", "2": "Trilha", "3": "Caverna", "4": "Ruínas"}
         cen = mapa.get(op)
         if cen:
             self.missao_config["cenario"] = cen
             print(f"Cenário definido: {cen}")
-        else:
-            print("Opção inválida.")
 
-    def _preview_missao(self) -> None:
-        print("\nPré-visualização da Missão")
-        print(f"- Dificuldade: {self.missao_config['dificuldade']}")
-        print(f"- Cenário:     {self.missao_config['cenario']}")
-        print("- Inimigos e recompensas: (em breve)")
-        print("- Regras de combate: (em breve)")
-
-    def _iniciar_missao_placeholder(self) -> None:
+    def _iniciar_missao_unica(self) -> None:
         if not self.jogador:
             print("Crie um personagem primeiro.")
             return
 
-        # Pega a dificuldade E O CENÁRIO configurados
         dificuldade = self.missao_config["dificuldade"]
         cenario = self.missao_config["cenario"]
         
-        # Passa os dois para a classe Missao
+        # Cria e executa a missão
         missao = Missao(dificuldade, cenario)
-        
-        # Executa
         missao.executar(self.jogador)
         
-        # Se morreu, reseta
         if not self.jogador.vivo:
-            print("Game Over.")
+            print(f"{Cor.VERMELHO}Game Over.{Cor.RESET}")
             self.jogador = None
+
+    def _iniciar_modo_sobrevivencia(self) -> None:
+        """
+        Loop de múltiplas missões com fogueira entre elas.
+        """
+        if not self.jogador:
+            print("Crie um personagem primeiro.")
+            return
+
+        print(f"\n{Cor.VERMELHO}=== ⚔️ MODO SOBREVIVÊNCIA INICIADO ⚔️ ==={Cor.RESET}")
+        print("Você viajará por várias terras. Se morrer, perde o personagem.")
+        print("Entre as batalhas, você poderá descansar.")
+        time.sleep(1)
+
+        rodada = 1
+        cenarios_disponiveis = ["Floresta", "Trilha", "Caverna", "Ruínas"]
+        
+        while self.jogador.vivo:
+            # Escolhe um cenário aleatório para dar variedade
+            cenario_atual = random.choice(cenarios_disponiveis)
+            dificuldade = self.missao_config["dificuldade"] # Mantém a dif escolhida
+
+            print(f"\n>>> {Cor.AMARELO}RODADA {rodada}{Cor.RESET} - Viajando para: {cenario_atual} <<<")
+            time.sleep(1)
+
+            # Executa a missão
+            missao = Missao(dificuldade, cenario_atual)
+            resultado = missao.executar(self.jogador)
+
+            # Se morreu, acaba tudo
+            if not self.jogador.vivo:
+                print(f"\n{Cor.VERMELHO}Sua jornada acabou na rodada {rodada}.{Cor.RESET}")
+                self.jogador = None
+                break
+
+            # Se venceu, aparece a FOGUEIRA
+            print(f"\n{Cor.AMARELO}🔥 Você encontra uma Fogueira segura... 🔥{Cor.RESET}")
+            print(f"Status: {self.jogador.barra_hp()} | MP: {self.jogador._atrib.mana}")
+            print("[1] Descansar (Recuperar Vida e Mana) e Continuar")
+            print("[2] Pegar o Loot e Voltar para a Cidade (Sair)")
+            
+            opcao = input("> ").strip()
+            
+            if opcao == "1":
+                print("\nVocê senta perto do fogo, come algo e medita...")
+                # Recupera Vida (Cura total)
+                recuperado = self.jogador.curar(9999)
+                # Recupera Mana (Simples adição, já que não temos mana_max explícito na base)
+                self.jogador._atrib.mana += 50 
+                
+                time.sleep(1)
+                print(f"{Cor.VERDE}Recuperou {recuperado} HP e 50 MP!{Cor.RESET}")
+                print("Preparando para a próxima viagem...")
+                rodada += 1
+                time.sleep(1)
+                
+            elif opcao == "2":
+                print(f"\nVocê decide que já arriscou demais por hoje.")
+                print(f"Retornando vitorioso após {rodada} rodadas!")
+                break
+            else:
+                print("Opção inválida. Você fica indeciso e acaba descansando por padrão.")
+                self.jogador.curar(9999)
+                rodada += 1
 
     def _ajuda_missao(self) -> None:
         print("\nAjuda — Missão")
-        print("- Selecione dificuldade e cenário.")
-        print("- A opção 'Iniciar missão' executará apenas um placeholder.")
-        print("- Uma futura implementação pode usar essas escolhas para montar encontros.")
+        print("- Missão Única: Joga no cenário configurado e volta ao menu.")
+        print("- Sobrevivência: Enfrenta inimigos aleatórios em sequência.")
+        print("- A dificuldade afeta a força dos inimigos e a chance de chefes.")
 
+    # --------------------------------------------------------------------------
+    # MENU: SALVAR
+    # --------------------------------------------------------------------------
     def menu_salvar(self) -> None:
         while True:
             print("\n=== Salvar ===")
-            print("[1] Salvar rápido (simulado)")
-            print("[2] Salvar com nome (simulado)")
-            print("[9] Ajuda")
+            print("[1] Salvar rápido")
+            print("[2] Salvar com nome")
             print("[0] Voltar")
             op = input("> ").strip()
 
@@ -205,45 +266,33 @@ class Jogo:
                 self._salvar_rapido()
             elif op == "2":
                 self._salvar_nomeado()
-            elif op == "9":
-                self._ajuda_salvar()
             elif op == "0":
                 break
-            else:
-                print("Opção inválida.")
 
     def _salvar_rapido(self) -> None:
+        if not self.jogador: return
+        repo = Repositorio()
+        repo.salvar(self.jogador.to_dict(), "quick_save")
         self._ultimo_save = "quick_save.json"
-        print(f"✔ Salvo (simulado) em: {self._ultimo_save}")
 
     def _salvar_nomeado(self) -> None:
         if not self.jogador:
-            print("Nenhum personagem para salvar! Crie um primeiro.")
+            print("Nenhum personagem para salvar!")
             return
-
         nome_arquivo = input("Nome do arquivo de save (ex: save1): ").strip()
-        if not nome_arquivo:
-            nome_arquivo = "save_auto"
-
-        # 1. Converte o objeto jogador para dicionário
-        dados_para_salvar = self.jogador.to_dict()
+        if not nome_arquivo: nome_arquivo = "save_auto"
         
-        # 2. Usa o repositório para escrever no disco
         repo = Repositorio()
-        repo.salvar(dados_para_salvar, nome_arquivo)
+        repo.salvar(self.jogador.to_dict(), nome_arquivo)
 
-    def _ajuda_salvar(self) -> None:
-        print("\nAjuda — Salvar")
-        print("- Salvar rápido usa um nome padrão fictício.")
-        print("- Salvar nomeado permite escolher um nome fictício.")
-        print("- Não há escrita em disco nesta base — é apenas navegação.")
-
+    # --------------------------------------------------------------------------
+    # MENU: CARREGAR
+    # --------------------------------------------------------------------------
     def menu_carregar(self) -> None:
         while True:
             print("\n=== Carregar ===")
-            print("[1] Carregar último save (simulado)")
-            print("[2] Carregar por nome (simulado)")
-            print("[9] Ajuda")
+            print("[1] Carregar último save")
+            print("[2] Carregar por nome")
             print("[0] Voltar")
             op = input("> ").strip()
 
@@ -251,50 +300,42 @@ class Jogo:
                 self._carregar_ultimo()
             elif op == "2":
                 self._carregar_nomeado()
-            elif op == "9":
-                self._ajuda_carregar()
             elif op == "0":
                 break
-            else:
-                print("Opção inválida.")
 
     def _carregar_ultimo(self) -> None:
         if self._ultimo_save:
-            self._ultimo_load = self._ultimo_save
-            print(f"✔ Carregado (simulado) de: {self._ultimo_load}")
+            self._carregar_arquivo(self._ultimo_save)
         else:
-            print("Nenhum save recente encontrado (simulado).")
+            # Tenta carregar o quick_save padrão
+            self._carregar_arquivo("quick_save.json")
 
     def _carregar_nomeado(self) -> None:
         nome_arquivo = input("Nome do arquivo para carregar: ").strip()
-        
+        self._carregar_arquivo(nome_arquivo)
+
+    def _carregar_arquivo(self, nome_arquivo: str) -> None:
         repo = Repositorio()
         dados = repo.carregar(nome_arquivo)
-        
         if dados:
-            # 3. Reconstrói o objeto jogador a partir dos dados
             try:
                 self.jogador = Personagem.from_dict(dados)
-                print(f"✔ Personagem {self.jogador.nome} (Nível {self.jogador.nivel}) carregado!")
+                print(f"✔ Personagem {self.jogador.nome} carregado!")
             except Exception as e:
                 print(f"Erro ao reconstruir personagem: {e}")
 
-    def _ajuda_carregar(self) -> None:
-        print("\nAjuda — Carregar")
-        print("- O carregamento aqui é apenas ilustrativo (sem leitura real).")
-        print("- Use o nome que você “salvou” anteriormente para simular.")
-
+    # --------------------------------------------------------------------------
+    # MENU: INVENTÁRIO & RANKING
+    # --------------------------------------------------------------------------
     def menu_inventario(self) -> None:
         if not self.jogador: return
-
         while True:
-            print("\n=== Inventário & Equipamentos ===")
-            # Mostra o que está no corpo
+            print("\n=== Inventário ===")
             arma = self.jogador.equipamentos['arma'].nome if self.jogador.equipamentos['arma'] else "Mãos nuas"
             armadura = self.jogador.equipamentos['armadura'].nome if self.jogador.equipamentos['armadura'] else "Roupas comuns"
             
-            print(f"Equipado: [Arma: {arma}] [Corpo: {armadura}]")
-            print(f"Stats Totais: Ataque {self.jogador.ataque_total} | Defesa {self.jogador.defesa_total}")
+            print(f"Equipado: [⚔️ {arma}] [🛡️ {armadura}]")
+            print(f"Stats: ATK {self.jogador.ataque_total} | DEF {self.jogador.defesa_total}")
             
             print("\nMochila:")
             if not self.jogador.inventario:
@@ -305,9 +346,7 @@ class Jogo:
                     detalhes = f"ATK+{item.ataque_bonus}" if hasattr(item, 'ataque_bonus') else f"Efeito {item.valor_efeito}"
                     print(f"[{i+1}] {item.nome} ({tipo} - {detalhes})")
 
-            print("\n[N] Digite o número do item para usar/equipar")
-            print("[0] Voltar")
-            
+            print("\n[N] Usar/Equipar item | [0] Voltar")
             op = input("> ").strip()
             if op == "0": break
             
@@ -322,44 +361,30 @@ class Jogo:
                         self.jogador.inventario.pop(idx)
             except ValueError:
                 pass
-# --- NOVO MÉTODO: RANKING ---
+
     def exibir_ranking(self) -> None:
-        print("\n=== 🏆 HALL DA FAMA (RANKING DE XP) 🏆 ===")
-        
-        arquivos_saves = glob.glob("*.json") # Busca todos arquivos .json na pasta
+        print("\n=== 🏆 HALL DA FAMA 🏆 ===")
+        arquivos_saves = glob.glob("*.json")
         placar = []
 
         for arquivo in arquivos_saves:
             try:
                 with open(arquivo, "r", encoding="utf-8") as f:
                     dados = json.load(f)
-                    
-                    # Verifica se é um save válido de personagem
-                    if "nome" in dados and "xp" in dados and "classe" in dados:
-                        nome = dados["nome"]
-                        xp = dados["xp"]
-                        classe = dados["classe"]
-                        nivel = dados["nivel"]
-                        placar.append({"nome": nome, "xp": xp, "classe": classe, "nivel": nivel})
+                    if "nome" in dados and "xp" in dados:
+                        placar.append(dados)
             except:
-                continue # Ignora arquivos corrompidos ou que não são saves
+                continue
 
-        # Ordena a lista: Quem tem mais XP fica em primeiro (reverse=True)
         placar_ordenado = sorted(placar, key=lambda x: x["xp"], reverse=True)
 
         if not placar_ordenado:
             print("Nenhum registro encontrado.")
         else:
-            print(f"{'Pos':<4} | {'Nome':<15} | {'Classe':<10} | {'Nível':<5} | {'XP':<6}")
-            print("-" * 50)
-            
+            print(f"{'Pos':<4} | {'Nome':<15} | {'Nível':<5} | {'XP':<6}")
+            print("-" * 40)
             for i, p in enumerate(placar_ordenado):
-                posicao = i + 1
-                medalha = ""
-                if posicao == 1: medalha = "🥇"
-                elif posicao == 2: medalha = "🥈"
-                elif posicao == 3: medalha = "🥉"
-                
-                print(f"{posicao:<4} | {p['nome']:<15} | {p['classe']:<10} | {p['nivel']:<5} | {p['xp']:<6} {medalha}")
+                medalha = "🥇" if i==0 else "🥈" if i==1 else "🥉" if i==2 else ""
+                print(f"{i+1:<4} | {p['nome']:<15} | {p['nivel']:<5} | {p['xp']:<6} {medalha}")
         
-        input("\nPressione Enter para voltar...")
+        input("\n[Enter] Voltar...")

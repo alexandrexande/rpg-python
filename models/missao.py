@@ -183,4 +183,51 @@ class Missao:
             return ResultadoMissao(True, "Vitória Conquistada.")
         else:
             print(f"\n{Cor.VERMELHO}DERROTA... Você caiu em combate.{Cor.RESET}")
-            Logger.registrar(f"Derrota.
+            Logger.registrar(f"Derrota. Personagem {p.nome} morreu.")
+            return ResultadoMissao(False, "Morto em combate.")
+
+    def _mostrar_status(self, p, e):
+        print(f"\n{Cor.AZUL}{p.nome}{Cor.RESET}: {p.barra_hp()} | MP: {p._atrib.mana}")
+        print(f"{Cor.VERMELHO}{e.nome}{Cor.RESET}: {e.barra_hp()}")
+
+    def _menu_item(self, p: Personagem) -> bool:
+        """Lista apenas consumíveis para uso em batalha."""
+        potions = [i for i in p.inventario if isinstance(i, Consumivel)]
+        
+        if not potions:
+            print("Você não tem itens utilizáveis em combate!")
+            return False
+        
+        print("\n--- Itens Disponíveis ---")
+        for i, item in enumerate(potions):
+            print(f"[{i+1}] {item.nome} (Efeito: {item.valor_efeito})")
+        print("[0] Cancelar")
+        
+        try:
+            op = int(input("Usar qual item? > "))
+            if op > 0 and op <= len(potions):
+                item = potions[op-1]
+                msg = item.usar(p)
+                print(f"{Cor.VERDE}{msg}{Cor.RESET}")
+                Logger.registrar(f"Usou item: {item.nome}")
+                
+                p.inventario.remove(item)
+                return True
+        except ValueError:
+            pass
+        return False
+
+    def _dropar_loot(self, p: Personagem):
+        """Gera recompensa baseada no loot específico do inimigo."""
+        print(f"\nVerificando os espólios de {self.inimigo.nome}...")
+        time.sleep(0.5)
+        
+        itens_dropados = self.inimigo.gerar_loot()
+        
+        if not itens_dropados:
+            print("Nada de valor encontrado.")
+        else:
+            for item in itens_dropados:
+                print(f"{Cor.AMARELO}$$$ LOOT! Você pegou: {item.nome} $$${Cor.RESET}")
+                p.inventario.append(item)
+                Logger.registrar(f"Loot obtido: {item.nome}")
