@@ -35,7 +35,7 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: CRIAÇÃO DE PERSONAGEM
     # --------------------------------------------------------------------------
-def menu_criar_personagem(self) -> None:
+    def menu_criar_personagem(self) -> None:
         while True:
             nome_exibir = self.dados_criacao["nome"] or "(não definido)"
             classe_exibir = self.dados_criacao["classe_str"] or "(não definido)"
@@ -47,7 +47,7 @@ def menu_criar_personagem(self) -> None:
             print(f"Nome: {nome_exibir} | Classe: {classe_exibir}")
             print("[1] Definir nome")
             print("[2] Escolher classe")
-            print("[3] 👀 Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
+            print("[3] Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
             print("[4] Ajuda")
             print("[5] Confirmar e Criar")
             print("[0] Voltar")
@@ -60,7 +60,7 @@ def menu_criar_personagem(self) -> None:
             elif op == "3":
                 self._menu_preview_classes() # <--- NOVO MENU
             elif op == "4":
-                self._ajuda_criar_personagem
+                self._ajuda_criar_personagem()
             elif op == "5":
                 self._confirmar_criacao()
             elif op == "0":
@@ -413,7 +413,7 @@ def menu_criar_personagem(self) -> None:
 
     def exibir_ranking(self) -> None:
         print("\n=== 🏆 HALL DA FAMA 🏆 ===")
-    caminho_busca = os.path.join("dados", "*.json")
+        caminho_busca = os.path.join("dados", "*.json")
         arquivos_saves = glob.glob(caminho_busca)
         
         placar = []
