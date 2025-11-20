@@ -3,7 +3,7 @@ import glob
 import json
 import time
 import random
-from models.personagem import Personagem, Guerreiro, Mago, Arqueiro
+from models.personagem import Personagem, Guerreiro, Mago, Arqueiro, ARVORE_EVOLUCAO
 from models.missao import Missao
 from utils.repositorio import Repositorio
 
@@ -34,23 +34,21 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: CRIAÇÃO DE PERSONAGEM
     # --------------------------------------------------------------------------
-    def menu_criar_personagem(self) -> None:
+def menu_criar_personagem(self) -> None:
         while True:
             nome_exibir = self.dados_criacao["nome"] or "(não definido)"
             classe_exibir = self.dados_criacao["classe_str"] or "(não definido)"
             
             if self.jogador:
                 print(f"\nPersonagem Ativo: {Cor.AZUL}{self.jogador.nome}{Cor.RESET} [{type(self.jogador).__name__}]")
-                print(f"Nível: {self.jogador.nivel} | XP: {self.jogador.xp}")
-                print(f"HP: {self.jogador._atrib.vida}/{self.jogador._atrib.vida_max} | MP: {self.jogador._atrib.mana}")
-            
+                
             print("\n=== Criar/Substituir Personagem ===")
-            print(f"Nome (rascunho): {nome_exibir}")
-            print(f"Classe (rascunho): {classe_exibir}")
+            print(f"Nome: {nome_exibir} | Classe: {classe_exibir}")
             print("[1] Definir nome")
             print("[2] Escolher classe")
-            print("[3] Confirmar e Criar")
+            print("[3] 👀 Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
             print("[4] Ajuda")
+            print("[5] Confirmar e Criar")
             print("[0] Voltar")
             op = input("> ").strip()
 
@@ -59,9 +57,11 @@ class Jogo:
             elif op == "2":
                 self._escolher_arquetipo()
             elif op == "3":
+                self._menu_preview_classes() # <--- NOVO MENU
+            elif op == "4":
+                self._ajuda_criar_personagem
+            elif op == "5":
                 self._confirmar_criacao()
-            elif op == '4':
-                self._ajuda_criar_personagem()
             elif op == "0":
                 break
             else:
@@ -87,6 +87,54 @@ class Jogo:
             print(f"Classe selecionada: {classe_escolhida}")
         else:
             print("Opção inválida.")
+
+    def _menu_preview_classes(self) -> None:
+        while True:
+            print("\n=== Guia de Classes e Evolução ===")
+            print("Veja o que cada classe ganha até o nível 20.")
+            print("[1] Guerreiro")
+            print("[2] Mago")
+            print("[3] Arqueiro")
+            print("[0] Voltar")
+            op = input("> ").strip()
+            
+            mapa = {"1": "Guerreiro", "2": "Mago", "3": "Arqueiro"}
+            classe = mapa.get(op)
+            
+            if classe:
+                self._mostrar_arvore_detalhada(classe)
+            elif op == "0":
+                break
+            else:
+                print("Inválido.")
+
+    def _mostrar_arvore_detalhada(self, nome_classe: str):
+        dados = ARVORE_EVOLUCAO.get(nome_classe)
+        stats = dados["status_base"]
+        
+        print(f"\n{Cor.AMARELO}>>> EVOLUÇÃO: {nome_classe.upper()} <<<{Cor.RESET}")
+        print(f"Ganho fixo por nível: +{stats['vida']} HP | +{stats['mana']} MP | +{stats['ataque']} ATK | +{stats['defesa']} DEF")
+        print("-" * 60)
+        
+        # Itera de 1 a 20 para mostrar timeline
+        for nivel in range(1, 21):
+            info = dados.get(nivel)
+            if info:
+                # Nível com Recompensa Especial
+                prefixo = "[HABILIDADE]" if info['tipo'] == 'skill' else "[PASSIVA]"
+                cor_txt = Cor.VERDE if info['tipo'] == 'skill' else Cor.AZUL
+                
+                print(f"Nível {nivel:02d}: {cor_txt}{prefixo} {info['nome']}{Cor.RESET}")
+                print(f"          Descrição: {info['desc']}")
+                if 'custo' in info:
+                    print(f"          Custo: {info['custo']} MP")
+                print("-" * 60)
+            else:
+                # Nível Comum
+                # print(f"Nível {nivel:02d}: Aumento de Status Padrão")
+                pass
+        
+        input("[Pressione Enter para voltar]")
 
     def _confirmar_criacao(self) -> None:
         nome = self.dados_criacao["nome"]
