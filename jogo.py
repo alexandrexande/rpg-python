@@ -8,7 +8,7 @@ from models.personagem import Personagem, Guerreiro, Mago, Arqueiro, ARVORE_EVOL
 from models.missao import Missao
 from utils.repositorio import Repositorio
 
-# Cores para o terminal (opcional, para ficar bonito)
+# Cores para o terminal (para ficar bonito)
 class Cor:
     VERMELHO = '\033[91m'
     VERDE = '\033[92m'
@@ -35,6 +35,10 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: CRIAÇÃO DE PERSONAGEM
     # --------------------------------------------------------------------------
+    # na criação de personagem você possue 3 classes, cada uma com sua peculiaridades
+    # guerreiro é mais tank, mago é um glass cannon (bate forte e morre facil)
+    # e o arqueiro é equilibrado, é recomendado ver a preview de habilidades
+    # para ter ideia do que escolher
     def menu_criar_personagem(self) -> None:
         while True:
             nome_exibir = self.dados_criacao["nome"] or "(não definido)"
@@ -47,7 +51,7 @@ class Jogo:
             print(f"Nome: {nome_exibir} | Classe: {classe_exibir}")
             print("[1] Definir nome")
             print("[2] Escolher classe")
-            print("[3] 👀 Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
+            print("[3] Ver Preview de Habilidades")
             print("[4] Ajuda")
             print("[5] Confirmar e Criar")
             print("[0] Voltar")
@@ -117,7 +121,6 @@ class Jogo:
         print(f"Ganho fixo por nível: +{stats['vida']} HP | +{stats['mana']} MP | +{stats['ataque']} ATK | +{stats['defesa']} DEF")
         print("-" * 60)
         
-        # Itera de 1 a 20 para mostrar timeline
         for nivel in range(1, 21):
             info = dados.get(nivel)
             if info:
@@ -162,6 +165,10 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: MISSÃO (COM MODO SOBREVIVÊNCIA)
     # --------------------------------------------------------------------------
+    # o menu missão possui 4 areas de missões, cada uma tendo inimigo unicos, alguns possuem drop
+    # enquanto outros não, existe o modo sobrevivencia em que aleatoriamente areas e inimigos são
+    # selecionados para batalhas, apos cada batalha voce pode escolher entre se curar ou pegar os
+    # drops que voce coletou (se digitar outra voce perde a fogueira e vai para a proxima batalha)
     def menu_missao(self) -> None:
         while True:
             print("\n=== Missão & Combate ===")
@@ -169,7 +176,7 @@ class Jogo:
             print("[1] Escolher dificuldade")
             print("[2] Escolher cenário")
             print(f"[3] Iniciar Missão Única")
-            print(f"{Cor.VERMELHO}[4] ☠️  Modo Sobrevivência (Múltiplas Missões) ☠️{Cor.RESET}")
+            print(f"{Cor.VERMELHO}[4] Modo Sobrevivência (Múltiplas Missões){Cor.RESET}")
             print("[5] Ajuda")
             print("[0] Voltar")
             op = input("> ").strip()
@@ -231,9 +238,7 @@ class Jogo:
             self.jogador = None
 
     def _iniciar_modo_sobrevivencia(self) -> None:
-        """
-        Loop de múltiplas missões com fogueira entre elas.
-        """
+
         if not self.jogador:
             print("Crie um personagem primeiro.")
             return
@@ -303,6 +308,8 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: SALVAR
     # --------------------------------------------------------------------------
+    # salva o personagem em um arquivo json, podendo salvar com um quick save que não precisa de nome definido
+    # ou um save com nome definido
     def menu_salvar(self) -> None:
         while True:
             print("\n=== Salvar ===")
@@ -337,6 +344,7 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: CARREGAR
     # --------------------------------------------------------------------------
+    # carrega um save, podendo carregar o quick save ou um save nomeado
     def menu_carregar(self) -> None:
         while True:
             print("\n=== Carregar ===")
@@ -376,8 +384,10 @@ class Jogo:
     # --------------------------------------------------------------------------
     # MENU: INVENTÁRIO & RANKING
     # --------------------------------------------------------------------------
+    # exibe o inventario do jogador, mostrando os itens utilizaveis em batalha
+    # e os itens equipaveis, podendo ser equipaveis
     def menu_inventario(self) -> None:
-        if not self.jogador: return
+        if not self.jogador: return print("Crie um personagem primeiro")
         while True:
             print("\n=== Inventário ===")
             arma = self.jogador.equipamentos['arma'].nome if self.jogador.equipamentos['arma'] else "Mãos nuas"
@@ -431,6 +441,8 @@ class Jogo:
             except ValueError:
                 pass
 
+# exibe o ranking dos jogadores por xp, ignorando o lv como parametro, 
+#por exemplo um player lv 2 com xp 0 vai está abaixo de um player lv 1 com 50 de xp
     def exibir_ranking(self) -> None:
         print("\n=== 🏆 HALL DA FAMA 🏆 ===")
         caminho_busca = os.path.join("dados", "*.json")

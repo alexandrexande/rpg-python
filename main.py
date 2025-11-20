@@ -3,7 +3,6 @@ from jogo import Jogo
 
 
 def menu() -> None:
-    """Menu principal do aplicativo."""
     jogo = Jogo()
     while True:
         print("\n=== RPG OO — Menu Principal ===")

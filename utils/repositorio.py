@@ -4,9 +4,7 @@ import os
 from typing import Any
 
 class Repositorio:
-    """
-    Gerencia a leitura e escrita de arquivos JSON na pasta 'dados/'.
-    """
+    #Gerencia a leitura e escrita de arquivos JSON na pasta 'dados/'.
     DIR_SAVES = "dados"
 
     def salvar(self, dados: dict[str, Any], nome_arquivo: str) -> None:

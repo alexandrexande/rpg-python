@@ -3,9 +3,7 @@ import os
 from datetime import datetime
 
 class Logger:
-    """
-    Responsável por registrar eventos do jogo em dados/jogo.log.
-    """
+    #Responsável por registrar eventos do jogo em dados/jogo.log.
     # Define a pasta onde os arquivos ficarão
     DIR_LOG = "dados"
 

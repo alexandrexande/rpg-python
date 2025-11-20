@@ -4,7 +4,7 @@ from .base import Entidade, Atributos
 from .item import Equipamento, Consumivel
 
 # --- TABELA DE PROGRESSÃO (LIVRO DE REGRAS) ---
-# Define o que cada classe ganha em cada nível
+# Define o que cada classe ganha em cada nível, vai ser puxada pela função de preview
 ARVORE_EVOLUCAO = {
     "Guerreiro": {
         1:  {"tipo": "skill", "nome": "Golpe Devastador", "custo": 10, "desc": "Ataque pesado (200% ATK)."},
@@ -143,7 +143,6 @@ class Personagem(Entidade):
         classe_nome = self.__class__.__name__
         dados_classe = ARVORE_EVOLUCAO.get(classe_nome, {})
         
-        # 1. Aplica Status Base (Vida, Mana, etc)
         stats = dados_classe.get("status_base", {})
         self._atrib.vida_max += stats.get("vida", 10)
         self._atrib.mana += stats.get("mana", 5)
@@ -154,7 +153,6 @@ class Personagem(Entidade):
         if logs:
             msgs.append(f"Atributos: +{stats['vida']} HP, +{stats['mana']} MP, +{stats['ataque']} Atk")
 
-        # 2. Verifica recompensas especiais do nível (Skills/Passivas)
         recompensa = dados_classe.get(nivel)
         if recompensa:
             tipo = recompensa["tipo"]
@@ -174,23 +172,15 @@ class Personagem(Entidade):
 
     # --- MENU DE HABILIDADES EM COMBATE ---
     def habilidade_especial(self) -> tuple[int, str]:
-        """Exibe menu de seleção se houver mais de uma skill."""
         if not self.habilidades_conhecidas:
             return 0, "não conhece nenhuma habilidade."
         
-        # Se tiver só 1 (nível baixo), usa direto
         if len(self.habilidades_conhecidas) == 1:
             return self._executar_skill(self.habilidades_conhecidas[0])
         
-        # Se tiver várias, mostra menu
         print("\n--- Escolha sua Habilidade ---")
         
-        # Acessa a tabela para pegar o custo de mana
         dados_classe = ARVORE_EVOLUCAO.get(self.__class__.__name__, {})
-        
-        # Precisamos achar o custo de cada skill na tabela
-        # Como a tabela é por nível, faremos uma busca reversa rápida ou iteramos
-        # Para simplificar, vou iterar os níveis conhecidos
         
         mapa_skills = []
         for lvl, info in dados_classe.items():
@@ -198,7 +188,7 @@ class Personagem(Entidade):
             if info["tipo"] == "skill" and info["nome"] in self.habilidades_conhecidas:
                 mapa_skills.append(info)
 
-        # Ordena por custo (opcional)
+        # Ordena por custo de mana
         mapa_skills.sort(key=lambda x: x["custo"])
 
         for i, skill in enumerate(mapa_skills):
@@ -216,13 +206,11 @@ class Personagem(Entidade):
 
     def _executar_skill(self, nome_skill: str) -> tuple[int, str]:
         """Roteador central que chama a lógica de cada classe."""
-        # Chama o método específico na subclasse
         metodo_limpo = nome_skill.lower().replace(" ", "_")
         if hasattr(self, f"skill_{metodo_limpo}"):
             return getattr(self, f"skill_{metodo_limpo}")()
         return 0, "habilidade não implementada."
 
-    # --- Persistência ---
     def to_dict(self) -> dict:
         def salvar_item(item):
             if not item: return None
@@ -265,10 +253,6 @@ class Personagem(Entidade):
         p._atrib.defesa = ats.get("defesa", 0)
         p._atrib.mana = ats.get("mana", 0)
 
-        # (Lógica de itens omitida para brevidade, mantém igual ao anterior)
-        # ... Copie a lógica de carregar_item do prompt anterior se necessário ...
-        # Mas como é um método estático, se o user copiar este arquivo inteiro,
-        # precisa incluir a lógica de itens aqui dentro. Vou incluir simplificado:
         def carregar_item(d):
             if not d: return None
             tipo = d.pop("classe_item", "pot")
@@ -287,7 +271,7 @@ class Personagem(Entidade):
 
 class Guerreiro(Personagem):
     def __init__(self, nome): super().__init__(nome, Atributos(120, 15, 5, 20))
-    
+    #algumas skills dão stun/atordoamento
     def skill_golpe_devastador(self):
         custo = 10
         if self._atrib.mana >= custo:
@@ -314,6 +298,7 @@ class Guerreiro(Personagem):
 class Mago(Personagem):
     def __init__(self, nome): super().__init__(nome, Atributos(70, 5, 2, 100))
 
+    # as skills possuem efeitos extras
     # Passiva Mente Clara: Regen mana
     def calcular_dano_base(self) -> int:
         if "Mente Clara" in self.passivas_ativas:
@@ -333,7 +318,6 @@ class Mago(Personagem):
         custo = 40
         if self._atrib.mana >= custo:
             self._atrib.mana -= custo
-            # No futuro pode adicionar status "Congelado"
             return int(self.ataque_total * 2.5), "lançou Raio Congelante!"
         return 0, "sem mana suficiente (40)."
 
@@ -366,7 +350,7 @@ class Arqueiro(Personagem):
         custo = 60
         if self._atrib.mana >= custo:
             self._atrib.mana -= custo
-            # Ignora defesa (simulado com dano puro alto)
+            # Ignora defesa (simulado com dano verdadeiro alto)
             dano = int(self.ataque_total * 3) + 50
-            return dano, "disparou Flecha Fantasma (Dano Puro)!"
+            return dano, "disparou Flecha Fantasma (Dano Verdadeiro)!"
         return 0, "sem mana suficiente (60)."

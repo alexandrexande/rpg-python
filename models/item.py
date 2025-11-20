@@ -4,10 +4,10 @@ from dataclasses import dataclass
 @dataclass
 class Item:
     nome: str
-    valor: int # Preço de venda (futuro) ou raridade
+    valor: int # Preço de venda (futuro) ou raridade (depois faço a loja)
 
 class Consumivel(Item):
-    """Poções e itens de uso único."""
+    #Poções e itens de uso único.
     def __init__(self, nome: str, tipo: str, valor_efeito: int):
         super().__init__(nome, valor=10)
         self.tipo = tipo  # "vida" ou "mana"
@@ -23,7 +23,7 @@ class Consumivel(Item):
         return "Item sem efeito."
 
 class Equipamento(Item):
-    """Armas e Armaduras."""
+    #Armas e Armaduras.
     def __init__(self, nome: str, slot: str, ataque: int = 0, defesa: int = 0):
         super().__init__(nome, valor=50)
         self.slot = slot # "arma" ou "armadura"

@@ -10,18 +10,18 @@ class Inimigo(Entidade):
         self.loot_especifico = [] # Lista de itens possíveis
 
     def realizar_acao(self) -> tuple[int, str]:
-        """Decide se ataca normal ou usa habilidade."""
+        #Decide se ataca normal ou usa habilidade.
         # 25% de chance de usar habilidade especial em inimigos comuns
         if random.random() < 0.25:
             return self.habilidade_especial()
         return self.atacar(), "atacou normalmente"
 
     def habilidade_especial(self) -> tuple[int, str]:
-        """Sobrescrito pelas subclasses."""
+        #Sobrescrito pelas subclasses.
         return self.atacar(), "tentou algo mas falhou"
 
     def gerar_loot(self) -> list:
-        """Gera loot baseado na tabela da criatura."""
+        #Gera loot baseado na tabela da criatura.
         drops = []
         if random.random() < 0.4: # 40% de chance de drop genérico
             drops.append(Consumivel("Poção Pequena", "vida", 20))
@@ -152,7 +152,7 @@ class MorcegoGigante(Inimigo):
 
 class Gargula(Inimigo):
     def __init__(self):
-        super().__init__("Gárgula de Pedra", 80, 15, 15) # Muita defesa
+        super().__init__("Gárgula de Pedra", 80, 15, 15)
         self.xp_recompensa = 100
         self.loot_especifico = [Equipamento("Elmo de Pedra", "armadura", defesa=10)]
 
@@ -163,14 +163,14 @@ class Kobold(Inimigo):
     def __init__(self):
         super().__init__("Kobold Mineiro", 30, 10, 2)
         self.xp_recompensa = 35
-        self.loot_especifico = [Consumivel("Bomba de Fumaça", "vida", -5)] # Item troll ou útil?
+        self.loot_especifico = [Consumivel("Bomba de Fumaça", "vida", -5)] # Item satanico
 
     def habilidade_especial(self):
         return 20, "jogou uma picareta!"
 
 class VermeColossal(Inimigo): # CHEFE
     def __init__(self):
-        super().__init__("Verme Colossal", 400, 20, 5) # Muito HP
+        super().__init__("Verme Colossal", 400, 20, 5) # So mago pra fazer isso facil
         self.xp_recompensa = 800
         self.loot_especifico = [Equipamento("Placa Quitina", "armadura", defesa=18)]
 

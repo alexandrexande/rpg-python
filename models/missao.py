@@ -4,7 +4,6 @@ import random
 from dataclasses import dataclass
 from utils.logger import Logger
 from .personagem import Personagem
-# Importando todas as variações de inimigos
 from .inimigo import (
     Inimigo, 
     Goblin, Lobo, Orc, ReiOgro,                  
@@ -35,7 +34,7 @@ class Missao:
         self.titulo = f"Batalha contra {self.inimigo.nome}"
 
     def _gerar_inimigo(self, dif: str, cenario: str) -> Inimigo:
-        """Seleciona o inimigo correto baseando-se no Cenário e na Dificuldade."""
+        #Seleciona o inimigo correto baseando-se no Cenário e na Dificuldade
         mapa_comuns = {
             "Trilha":   [Ladrao, Cacador, Elfo],
             "Floresta": [Goblin, Lobo, Orc],
@@ -72,7 +71,7 @@ class Missao:
 
         turnos = 0
         
-        # Dicionários de Status (Nome do status : Turnos restantes)
+        # Dicionários de Status (Nome do status : Turnos restantes) isso também funciona para os jogador
         status_jogador = {"veneno": 0, "fogo": 0}
         status_inimigo = {"fogo": 0, "congelado": 0, "atordoado": 0}
 
