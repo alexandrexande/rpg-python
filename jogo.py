@@ -171,11 +171,12 @@ class Jogo:
             print("Crie um personagem primeiro.")
             return
 
-        # Pega a dificuldade configurada
+        # Pega a dificuldade E O CENÁRIO configurados
         dificuldade = self.missao_config["dificuldade"]
+        cenario = self.missao_config["cenario"]
         
-        # Cria e executa a missão (a missão gera o inimigo sozinha agora)
-        missao = Missao(dificuldade)
+        # Passa os dois para a classe Missao
+        missao = Missao(dificuldade, cenario)
         
         # Executa
         missao.executar(self.jogador)
