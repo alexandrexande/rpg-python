@@ -1,33 +1,42 @@
 from __future__ import annotations
-
+from models.personagem import Personagem, Guerreiro, Mago, Arqueiro
+from models.missao import Missao
+from models.inimigo import Inimigo
 
 class Jogo:
-    """
-    Estrutura base com menus e submenus completos.
-    Implementem a logica do jogo ou persistência real.
-    """
-
     def __init__(self) -> None:
-        self.personagem = {
-            "nome": None,
-            "arquetipo": None,   # ex.: "Guerreiro", "Mago" (placeholder textual)
+        # Agora 'self.jogador' guardará o Objeto real, não apenas um dicionário
+        self.jogador: Personagem | None = None
+        
+        # Dados temporários para o menu de criação
+        self.dados_criacao = {
+            "nome": "",
+            "classe_str": ""
         }
+        
         self.missao_config = {
-            "dificuldade": "Fácil",  # Fácil | Média | Difícil
-            "cenario": "Trilha",     # rótulo ilustrativo
+            "dificuldade": "Fácil",
+            "cenario": "Trilha",
         }
         self._ultimo_save = None
-        self._ultimo_load = None
 
     def menu_criar_personagem(self) -> None:
         while True:
-            print("\n=== Criar Personagem ===")
-            print(f"Nome atual: {self.personagem['nome'] or '(não definido)'}")
-            print(f"Arquétipo:  {self.personagem['arquetipo'] or '(não definido)'}")
+            # Mostra os dados temporários ou o objeto já criado
+            nome_exibir = self.dados_criacao["nome"] or "(não definido)"
+            classe_exibir = self.dados_criacao["classe_str"] or "(não definido)"
+            
+            if self.jogador:
+                print(f"\nPersonagem Ativo: {self.jogador.nome} [{type(self.jogador).__name__}]")
+                print(f"HP: {self.jogador._atrib.vida} | ATK: {self.jogador._atrib.ataque} | MP: {self.jogador._atrib.mana}")
+            
+            print("\n=== Criar/Substituir Personagem ===")
+            print(f"Nome (rascunho): {nome_exibir}")
+            print(f"Classe (rascunho): {classe_exibir}")
             print("[1] Definir nome")
-            print("[2] Escolher arquétipo")
-            print("[3] Confirmar criação")
-            print("[9] Ajuda")
+            print("[2] Escolher classe")
+            print("[3] Confirmar e Criar")
+            print("[4] Ajuda")
             print("[0] Voltar")
             op = input("> ").strip()
 
@@ -37,7 +46,7 @@ class Jogo:
                 self._escolher_arquetipo()
             elif op == "3":
                 self._confirmar_criacao()
-            elif op == "9":
+            elif op == '4':
                 self._ajuda_criar_personagem()
             elif op == "0":
                 break
@@ -47,44 +56,42 @@ class Jogo:
     def _definir_nome(self) -> None:
         nome = input("Digite o nome do personagem: ").strip()
         if nome:
-            self.personagem["nome"] = nome
-            print(f"Nome definido: {nome}")
-        else:
-            print("Nome não alterado.")
+            self.dados_criacao["nome"] = nome
 
     def _escolher_arquetipo(self) -> None:
-        print("\nArquétipos disponíveis (apenas ilustrativos):")
-        print("[1] Guerreiro")
-        print("[2] Mago")
-        print("[3] Arqueiro")
-        print("[4] Curandeiro")
-        print("[5] Personalizado")
+        print("\nClasses disponíveis:")
+        print("[1] Guerreiro (Tanque/Físico)")
+        print("[2] Mago (Frágil/Dano Mágico)")
+        print("[3] Arqueiro (Equilibrado)")
         escolha = input("> ").strip()
 
-        mapa = {
-            "1": "Guerreiro",
-            "2": "Mago",
-            "3": "Arqueiro",
-            "4": "Curandeiro",
-            "5": "Personalizado",
-        }
-        arq = mapa.get(escolha)
-        if arq:
-            self.personagem["arquetipo"] = arq
-            print(f"Arquétipo definido: {arq}")
+        mapa = {"1": "Guerreiro", "2": "Mago", "3": "Arqueiro"}
+        classe_escolhida = mapa.get(escolha)
+        
+        if classe_escolhida:
+            self.dados_criacao["classe_str"] = classe_escolhida
+            print(f"Classe selecionada: {classe_escolhida}")
         else:
-            print("Opção inválida. Arquétipo não alterado.")
+            print("Opção inválida.")
 
     def _confirmar_criacao(self) -> None:
-        if not self.personagem["nome"]:
-            print("Defina um nome antes de confirmar a criação.")
+        nome = self.dados_criacao["nome"]
+        classe_str = self.dados_criacao["classe_str"]
+
+        if not nome or not classe_str:
+            print("Erro: Defina NOME e CLASSE antes de confirmar.")
             return
-        if not self.personagem["arquetipo"]:
-            print("Escolha um arquétipo antes de confirmar a criação.")
-            return
-        print("\nPersonagem criado com sucesso!")
-        print(f"Nome: {self.personagem['nome']} | Arquétipo: {self.personagem['arquetipo']}")
-        print("(Obs.: criação ilustrativa; sem atributos ainda.)")
+
+        # Lógica de Fábrica: Cria o objeto baseado na string
+        if classe_str == "Guerreiro":
+            self.jogador = Guerreiro(nome)
+        elif classe_str == "Mago":
+            self.jogador = Mago(nome)
+        elif classe_str == "Arqueiro":
+            self.jogador = Arqueiro(nome)
+        
+        print(f"\n✨ Personagem {self.jogador.nome} criado com sucesso!")
+        print("Agora você tem atributos reais para jogar.")
 
     def _ajuda_criar_personagem(self) -> None:
         print("\nAjuda — Criar Personagem")
@@ -156,13 +163,32 @@ class Jogo:
         print("- Inimigos e recompensas: (em breve)")
         print("- Regras de combate: (em breve)")
 
-    def _iniciar_missao_placeholder(self) -> None:
-        if not self.personagem["nome"]:
-            print("Crie um personagem antes de iniciar uma missão.")
+def _iniciar_missao_placeholder(self) -> None:
+        # Verifica se o jogador existe (instanciado na etapa anterior)
+        if not self.jogador:
+            print("\n[ERRO] Crie um personagem antes de iniciar uma missão!")
             return
-        print("\nIniciando missão...")
-        print("(Placeholder) Combate e lógica de jogo serão implementados futuramente.")
-        print("Missão finalizada (simulado). Retornando ao menu de Missão...")
+
+        # Cria um inimigo baseado na dificuldade escolhida
+        dificuldade = self.missao_config["dificuldade"]
+        if dificuldade == "Fácil":
+            inimigo = Inimigo("Goblin", vida=30, ataque=8, defesa=0)
+        elif dificuldade == "Média":
+            inimigo = Inimigo("Orc", vida=60, ataque=12, defesa=2)
+        else: # Difícil
+            inimigo = Inimigo("Dragão Jovem", vida=100, ataque=20, defesa=5)
+
+        titulo_missao = f"Exploração em {self.missao_config['cenario']} ({dificuldade})"
+        
+        # Instancia a missão e executa passando o objeto JOGADOR real
+        missao = Missao(titulo_missao, inimigo)
+        resultado = missao.executar(self.jogador)
+
+        # Feedback pós-missão
+        print(f"\nResultado da missão: {resultado.detalhes}")
+        if not self.jogador.vivo:
+            print("Seu personagem morreu. Crie um novo para continuar jogando.")
+            self.jogador = None # Reset
 
     def _ajuda_missao(self) -> None:
         print("\nAjuda — Missão")
