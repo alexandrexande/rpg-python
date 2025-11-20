@@ -32,6 +32,52 @@ class Personagem(Entidade):
                 "mana": self._atrib.mana
             }
         }
+    
+    # ... (métodos anteriores)
+
+    def ganhar_xp(self, quantidade: int) -> list[str]:
+        """
+        Adiciona XP e verifica se subiu de nível (pode subir múltiplos de uma vez).
+        Retorna uma lista de mensagens de log.
+        """
+        self.xp += quantidade
+        mensagens = []
+
+        # Loop para caso ganhe muito XP e suba vários níveis
+        while True:
+            xp_necessario = self.nivel * 100
+            
+            if self.xp >= xp_necessario:
+                self.xp -= xp_necessario
+                self.nivel += 1
+                self._aplicar_bonus_nivel()
+                mensagens.append(f"SUBIU PARA O NÍVEL {self.nivel}!")
+                mensagens.append(f"Status aumentados e Vida/Mana recuperados!")
+            else:
+                break
+        
+        return mensagens
+
+    def _aplicar_bonus_nivel(self):
+        """Define o quanto o personagem melhora a cada nível."""
+        # Bônus fixos para simplificar (poderia variar por classe)
+        inc_vida = 15
+        inc_mana = 5
+        inc_ataque = 2
+        inc_defesa = 1
+
+        self._atrib.vida_max += inc_vida
+        self._atrib.mana += inc_mana  # Aumenta pool (opcional, ou só recupera)
+        self._atrib.ataque += inc_ataque
+        self._atrib.defesa += inc_defesa
+        
+        # Recuperação total ao subir de nível
+        self._atrib.vida = self._atrib.vida_max
+        
+        # (Opcional) Se quiser que a mana encha também, descomente abaixo:
+        # self._atrib.mana = 100 # ou algum teto máximo definido na classe
+
+    # ... (restante do código, to_dict, from_dict, etc.)
 
     @staticmethod
     def from_dict(dados: dict) -> Personagem:

@@ -83,12 +83,29 @@ class Missao:
             time.sleep(1)
 
         # Fim do Loop
+# ... (código anterior do loop while)
+
         print(f"\n{'='*40}")
         if p.vivo:
-            xp_ganho = 100
-            p.xp += xp_ganho # Simples sistema de XP
+            # Define XP base do inimigo (pode virar atributo do Inimigo depois)
+            xp_ganho = 100 + (self.inimigo._atrib.ataque * 2)
+            
             print(f"VITÓRIA! O {self.inimigo.nome} caiu.")
             print(f"Você ganhou {xp_ganho} XP.")
+            
+            # --- AQUI A MÁGICA ACONTECE ---
+            msgs_levelup = p.ganhar_xp(xp_ganho)
+            
+            if msgs_levelup:
+                print("\n" + "*"*30)
+                for msg in msgs_levelup:
+                    print(f"*** {msg}")
+                print("*"*30 + "\n")
+            else:
+                xp_prox = p.nivel * 100
+                print(f"XP Atual: {p.xp}/{xp_prox}")
+            # ------------------------------
+
             return ResultadoMissao(venceu=True, detalhes="Vitória em combate.")
         else:
             print("DERROTA... Sua visão escurece.")
