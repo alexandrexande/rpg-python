@@ -47,7 +47,7 @@ class Jogo:
             print(f"Nome: {nome_exibir} | Classe: {classe_exibir}")
             print("[1] Definir nome")
             print("[2] Escolher classe")
-            print("[3] Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
+            print("[3] 👀 Ver Preview de Habilidades (Obrigatório ver antes de escolher!)")
             print("[4] Ajuda")
             print("[5] Confirmar e Criar")
             print("[0] Voltar")
@@ -169,8 +169,8 @@ class Jogo:
             print("[1] Escolher dificuldade")
             print("[2] Escolher cenário")
             print(f"[3] Iniciar Missão Única")
-            print(f"{Cor.VERMELHO}[5] ☠️  Modo Sobrevivência (Múltiplas Missões) ☠️{Cor.RESET}")
-            print("[9] Ajuda")
+            print(f"{Cor.VERMELHO}[4] ☠️  Modo Sobrevivência (Múltiplas Missões) ☠️{Cor.RESET}")
+            print("[5] Ajuda")
             print("[0] Voltar")
             op = input("> ").strip()
 
@@ -180,9 +180,9 @@ class Jogo:
                 self._escolher_cenario()
             elif op == "3":
                 self._iniciar_missao_unica()
-            elif op == "5":
+            elif op == "4":
                 self._iniciar_modo_sobrevivencia()
-            elif op == "9":
+            elif op == "5":
                 self._ajuda_missao()
             elif op == "0":
                 break
@@ -391,8 +391,28 @@ class Jogo:
                 print("(Vazia)")
             else:
                 for i, item in enumerate(self.jogador.inventario):
-                    tipo = "Equip" if hasattr(item, 'slot') else "Poção"
-                    detalhes = f"ATK+{item.ataque_bonus}" if hasattr(item, 'ataque_bonus') else f"Efeito {item.valor_efeito}"
+                    # Verifica se é Equipamento (tem slot) ou Consumível
+                    if hasattr(item, 'slot'):
+                        tipo = "Equip"
+                        
+                        # --- LÓGICA DE CORREÇÃO AQUI ---
+                        stats = []
+                        # Verifica e adiciona Ataque se for maior que 0
+                        if hasattr(item, 'ataque_bonus') and item.ataque_bonus > 0:
+                            stats.append(f"ATK+{item.ataque_bonus}")
+                        
+                        # Verifica e adiciona Defesa se for maior que 0
+                        if hasattr(item, 'defesa_bonus') and item.defesa_bonus > 0:
+                            stats.append(f"DEF+{item.defesa_bonus}")
+                        
+                        # Junta os stats (ex: "ATK+5 DEF+2") ou coloca traço se não tiver nada
+                        detalhes = " ".join(stats) if stats else "-"
+                        # -------------------------------
+
+                    else:
+                        tipo = "Poção"
+                        detalhes = f"Efeito {item.valor_efeito}"
+
                     print(f"[{i+1}] {item.nome} ({tipo} - {detalhes})")
 
             print("\n[N] Usar/Equipar item | [0] Voltar")
