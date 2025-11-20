@@ -1,4 +1,6 @@
 from __future__ import annotations
+import glob  # <--- Necessário para listar arquivos na pasta
+import json
 from models.personagem import Personagem, Guerreiro, Mago, Arqueiro
 from models.missao import Missao
 from models.inimigo import Inimigo
@@ -319,3 +321,44 @@ class Jogo:
                         self.jogador.inventario.pop(idx)
             except ValueError:
                 pass
+# --- NOVO MÉTODO: RANKING ---
+    def exibir_ranking(self) -> None:
+        print("\n=== 🏆 HALL DA FAMA (RANKING DE XP) 🏆 ===")
+        
+        arquivos_saves = glob.glob("*.json") # Busca todos arquivos .json na pasta
+        placar = []
+
+        for arquivo in arquivos_saves:
+            try:
+                with open(arquivo, "r", encoding="utf-8") as f:
+                    dados = json.load(f)
+                    
+                    # Verifica se é um save válido de personagem
+                    if "nome" in dados and "xp" in dados and "classe" in dados:
+                        nome = dados["nome"]
+                        xp = dados["xp"]
+                        classe = dados["classe"]
+                        nivel = dados["nivel"]
+                        placar.append({"nome": nome, "xp": xp, "classe": classe, "nivel": nivel})
+            except:
+                continue # Ignora arquivos corrompidos ou que não são saves
+
+        # Ordena a lista: Quem tem mais XP fica em primeiro (reverse=True)
+        placar_ordenado = sorted(placar, key=lambda x: x["xp"], reverse=True)
+
+        if not placar_ordenado:
+            print("Nenhum registro encontrado.")
+        else:
+            print(f"{'Pos':<4} | {'Nome':<15} | {'Classe':<10} | {'Nível':<5} | {'XP':<6}")
+            print("-" * 50)
+            
+            for i, p in enumerate(placar_ordenado):
+                posicao = i + 1
+                medalha = ""
+                if posicao == 1: medalha = "🥇"
+                elif posicao == 2: medalha = "🥈"
+                elif posicao == 3: medalha = "🥉"
+                
+                print(f"{posicao:<4} | {p['nome']:<15} | {p['classe']:<10} | {p['nivel']:<5} | {p['xp']:<6} {medalha}")
+        
+        input("\nPressione Enter para voltar...")
