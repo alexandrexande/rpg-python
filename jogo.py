@@ -1,5 +1,6 @@
 from __future__ import annotations
 import glob
+import os
 import json
 import time
 import random
@@ -412,7 +413,9 @@ def menu_criar_personagem(self) -> None:
 
     def exibir_ranking(self) -> None:
         print("\n=== 🏆 HALL DA FAMA 🏆 ===")
-        arquivos_saves = glob.glob("*.json")
+    caminho_busca = os.path.join("dados", "*.json")
+        arquivos_saves = glob.glob(caminho_busca)
+        
         placar = []
 
         for arquivo in arquivos_saves:

@@ -5,18 +5,24 @@ from typing import Any
 
 class Repositorio:
     """
-    Gerencia a leitura e escrita de arquivos JSON.
+    Gerencia a leitura e escrita de arquivos JSON na pasta 'dados/'.
     """
+    DIR_SAVES = "dados"
 
     def salvar(self, dados: dict[str, Any], nome_arquivo: str) -> None:
-        # Garante que o nome do arquivo tenha extensão .json
         if not nome_arquivo.endswith(".json"):
             nome_arquivo += ".json"
         
+        # Garante que a pasta existe
+        os.makedirs(self.DIR_SAVES, exist_ok=True)
+
+        # Cria o caminho completo (ex: dados/save1.json)
+        caminho_completo = os.path.join(self.DIR_SAVES, nome_arquivo)
+        
         try:
-            with open(nome_arquivo, "w", encoding="utf-8") as f:
+            with open(caminho_completo, "w", encoding="utf-8") as f:
                 json.dump(dados, f, indent=4, ensure_ascii=False)
-            print(f"✔ Jogo salvo com sucesso em '{nome_arquivo}'!")
+            print(f"✔ Jogo salvo com sucesso em '{caminho_completo}'!")
         except Exception as e:
             print(f"❌ Erro ao salvar arquivo: {e}")
 
@@ -24,12 +30,14 @@ class Repositorio:
         if not nome_arquivo.endswith(".json"):
             nome_arquivo += ".json"
 
-        if not os.path.exists(nome_arquivo):
-            print(f"❌ Arquivo '{nome_arquivo}' não encontrado.")
+        caminho_completo = os.path.join(self.DIR_SAVES, nome_arquivo)
+
+        if not os.path.exists(caminho_completo):
+            print(f"❌ Arquivo '{nome_arquivo}' não encontrado na pasta '{self.DIR_SAVES}'.")
             return None
 
         try:
-            with open(nome_arquivo, "r", encoding="utf-8") as f:
+            with open(caminho_completo, "r", encoding="utf-8") as f:
                 dados = json.load(f)
             return dados
         except Exception as e:
