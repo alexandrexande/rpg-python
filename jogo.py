@@ -165,31 +165,23 @@ class Jogo:
         print("- Regras de combate: (em breve)")
 
     def _iniciar_missao_placeholder(self) -> None:
-        # Verifica se o jogador existe (instanciado na etapa anterior)
         if not self.jogador:
-            print("\n[ERRO] Crie um personagem antes de iniciar uma missão!")
+            print("Crie um personagem primeiro.")
             return
 
-        # Cria um inimigo baseado na dificuldade escolhida
+        # Pega a dificuldade configurada
         dificuldade = self.missao_config["dificuldade"]
-        if dificuldade == "Fácil":
-            inimigo = Inimigo("Goblin", vida=30, ataque=8, defesa=0)
-        elif dificuldade == "Média":
-            inimigo = Inimigo("Orc", vida=60, ataque=12, defesa=2)
-        else: # Difícil
-            inimigo = Inimigo("Dragão Jovem", vida=100, ataque=20, defesa=5)
-
-        titulo_missao = f"Exploração em {self.missao_config['cenario']} ({dificuldade})"
         
-        # Instancia a missão e executa passando o objeto JOGADOR real
-        missao = Missao(titulo_missao, inimigo)
-        resultado = missao.executar(self.jogador)
-
-        # Feedback pós-missão
-        print(f"\nResultado da missão: {resultado.detalhes}")
+        # Cria e executa a missão (a missão gera o inimigo sozinha agora)
+        missao = Missao(dificuldade)
+        
+        # Executa
+        missao.executar(self.jogador)
+        
+        # Se morreu, reseta
         if not self.jogador.vivo:
-            print("Seu personagem morreu. Crie um novo para continuar jogando.")
-            self.jogador = None # Reset
+            print("Game Over.")
+            self.jogador = None
 
     def _ajuda_missao(self) -> None:
         print("\nAjuda — Missão")

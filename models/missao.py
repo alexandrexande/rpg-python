@@ -2,9 +2,18 @@ from __future__ import annotations
 import time
 import random
 from dataclasses import dataclass
+from utils.logger import Logger
 from .personagem import Personagem
-from .inimigo import Inimigo
+from .inimigo import Inimigo, Goblin, Lobo, Orc, Chefao
 from .item import Equipamento, Consumivel
+
+# --- Códigos de Cores para o Terminal ---
+class Cor:
+    VERMELHO = '\033[91m'
+    VERDE = '\033[92m'
+    AMARELO = '\033[93m'
+    AZUL = '\033[94m'
+    RESET = '\033[0m'
 
 @dataclass
 class ResultadoMissao:
@@ -12,28 +21,47 @@ class ResultadoMissao:
     detalhes: str
 
 class Missao:
-    def __init__(self, titulo: str, inimigo: Inimigo):
-        self.titulo = titulo
-        self.inimigo = inimigo
+    def __init__(self, dificuldade: str):
+        self.dificuldade = dificuldade
+        self.inimigo = self._gerar_inimigo(dificuldade)
+        self.titulo = f"Batalha contra {self.inimigo.nome}"
+
+    def _gerar_inimigo(self, dif: str) -> Inimigo:
+        """Fábrica de inimigos: escolhe aleatoriamente baseado na dificuldade."""
+        if dif == "Fácil":
+            return random.choice([Goblin(), Lobo()])
+        elif dif == "Média":
+            return random.choice([Lobo(), Orc()])
+        else: # Difícil
+            # 20% de chance de virar um Chefão no difícil
+            if random.random() < 0.2:
+                return Chefao()
+            return Orc()
 
     def executar(self, p: Personagem) -> ResultadoMissao:
-        print(f"\n=== COMBATE: {self.titulo} ===")
-        print(f"Inimigo: {self.inimigo.nome} (HP: {self.inimigo._atrib.vida})")
+        Logger.registrar(f"Iniciando missão: {p.nome} (Nvl {p.nivel}) vs {self.inimigo.nome}")
+        
+        print(f"\n{Cor.AMARELO}{'='*40}{Cor.RESET}")
+        print(f"PERIGO: Você encontrou um {Cor.VERMELHO}{self.inimigo.nome}{Cor.RESET}!")
+        print(f"{Cor.AMARELO}{'='*40}{Cor.RESET}\n")
         time.sleep(1)
 
+        turnos = 0
         while p.vivo and self.inimigo.vivo:
+            turnos += 1
             self._mostrar_status(p, self.inimigo)
-            
-            print("\nAções:")
+            print(f"\n--- Turno {turnos} ---")
+
+            # --- Turno do Jogador ---
             print("[1] Atacar")
             print("[2] Habilidade Especial")
-            print("[3] Usar Item (Inventário)")
+            print("[3] Usar Item")
             print("[4] Fugir")
             acao = input("> ").strip()
-
+            
             dano_causado = 0
             msg_acao = ""
-            turno_passou = True
+            passou_turno = True
 
             if acao == "1":
                 dano_causado = p.calcular_dano_base()
@@ -45,103 +73,125 @@ class Missao:
                     dano_causado = dano
                     msg_acao = msg
                 else:
-                    print(f"Falha: {msg}")
-                    turno_passou = False # Não perde turno se falhar por falta de mana
-            
+                    print(f"{Cor.AMARELO}{msg}{Cor.RESET}")
+                    passou_turno = False # Não gasta o turno se falhar
+
             elif acao == "3":
-                usou = self._menu_inventario_batalha(p)
+                # Abre inventário; se não usar nada, não passa o turno
+                usou = self._menu_item(p)
                 if usou:
-                    msg_acao = "usou um item"
                     dano_causado = 0
+                    msg_acao = "usou um item"
                 else:
-                    turno_passou = False
+                    passou_turno = False
             
             elif acao == "4":
                 if random.random() < 0.4:
-                    return ResultadoMissao(False, "Fugiu com sucesso.")
-                print("Falha ao fugir!")
+                    Logger.registrar(f"{p.nome} fugiu do {self.inimigo.nome}.")
+                    print(f"{Cor.VERDE}Você conseguiu escapar!{Cor.RESET}")
+                    return ResultadoMissao(False, "Fugiu da batalha.")
+                else:
+                    print(f"{Cor.VERMELHO}Falha ao fugir! O inimigo bloqueou o caminho.{Cor.RESET}")
             
             else:
                 print("Opção inválida.")
-                turno_passou = False
+                passou_turno = False
 
-            if turno_passou:
-                # Aplica dano no inimigo
+            # --- Aplicação de Dano (se o turno valeu) ---
+            if passou_turno:
                 if dano_causado > 0:
                     real = self.inimigo.receber_dano(dano_causado)
-                    print(f"--> Você {msg_acao} causando {real} de dano!")
+                    print(f"--> Você {msg_acao} causando {Cor.VERDE}{real}{Cor.RESET} de dano!")
+                    Logger.log_combate(turnos, p.nome, self.inimigo.nome, real)
                 
-                if not self.inimigo.vivo: break
+                if not self.inimigo.vivo:
+                    break
 
-                # Inimigo ataca
+                # --- Turno do Inimigo ---
                 time.sleep(0.5)
-                dano_ini = int(self.inimigo.atacar() * random.uniform(0.8, 1.2))
-                recebido = p.receber_dano(dano_ini)
-                print(f"<-- {self.inimigo.nome} atacou você causando {recebido} de dano!")
+                dano_ini = self.inimigo.atacar()
+                # Pequena variação de dano (random)
+                dano_var = int(dano_ini * random.uniform(0.8, 1.2))
+                recebido = p.receber_dano(dano_var)
+                
+                print(f"<-- O {self.inimigo.nome} atacou! Você sofreu {Cor.VERMELHO}{recebido}{Cor.RESET} de dano.")
+                Logger.log_combate(turnos, self.inimigo.nome, p.nome, recebido)
 
+        # --- Resultado Final ---
         if p.vivo:
-            print(f"\nVITÓRIA! O {self.inimigo.nome} foi derrotado.")
-            p.ganhar_xp(100)
-            self._gerar_loot(p)
-            return ResultadoMissao(True, "Vitória.")
-        
-        return ResultadoMissao(False, "Derrota.")
+            print(f"\n{Cor.VERDE}VITÓRIA! O inimigo caiu.{Cor.RESET}")
+            
+            # Ganha XP
+            xp_ganho = self.inimigo.xp_recompensa
+            p.ganhar_xp(xp_ganho)
+            Logger.registrar(f"Vitória. Ganhou {xp_ganho} XP.")
+            
+            # Drop de Loot
+            self._dropar_loot(p)
+            
+            return ResultadoMissao(True, "Vitória Conquistada.")
+        else:
+            print(f"\n{Cor.VERMELHO}DERROTA... Você caiu em combate.{Cor.RESET}")
+            Logger.registrar(f"Derrota. Personagem {p.nome} morreu.")
+            return ResultadoMissao(False, "Morto em combate.")
 
     def _mostrar_status(self, p, e):
-        print(f"\n{p.nome}: {p.barra_hp()} | MP:{p._atrib.mana}")
-        print(f"{e.nome}: {e.barra_hp()}")
+        print(f"\n{Cor.AZUL}{p.nome}{Cor.RESET}: {p.barra_hp()} | MP: {p._atrib.mana}")
+        print(f"{Cor.VERMELHO}{e.nome}{Cor.RESET}: {e.barra_hp()}")
 
-    def _menu_inventario_batalha(self, p: Personagem) -> bool:
-        """Retorna True se usou item, False se cancelou."""
+    def _menu_item(self, p: Personagem) -> bool:
+        """Lista apenas consumíveis para uso em batalha."""
         potions = [i for i in p.inventario if isinstance(i, Consumivel)]
+        
         if not potions:
-            print("Nenhuma poção no inventário!")
+            print("Você não tem poções!")
             return False
         
-        print("\n--- Poções ---")
+        print("\n--- Itens Disponíveis ---")
         for i, item in enumerate(potions):
             print(f"[{i+1}] {item.nome} (Efeito: {item.valor_efeito})")
         print("[0] Cancelar")
         
         try:
-            op = int(input("> "))
-            if 0 < op <= len(potions):
+            op = int(input("Usar qual item? > "))
+            if op > 0 and op <= len(potions):
                 item = potions[op-1]
-                print(item.usar(p))
+                msg = item.usar(p)
+                print(f"{Cor.VERDE}{msg}{Cor.RESET}")
+                Logger.registrar(f"Usou item: {item.nome}")
+                
+                # Remove do inventário após uso
                 p.inventario.remove(item)
                 return True
-        except:
+        except ValueError:
             pass
         return False
 
-    def _gerar_loot(self, p: Personagem):
-        """Gera equipamentos ou poções aleatórias."""
+    def _dropar_loot(self, p: Personagem):
+        """Gera recompensa aleatória."""
         chance = random.random()
-        item_drop = None
+        
+        if chance < 0.5: # 50% de chance de nada
+            print("O inimigo não tinha itens valiosos.")
+            return
 
-        if chance < 0.4: # 40% chance de Poção
+        item_drop = None
+        # Se for Chefão, dropa item melhor (opcional)
+        if isinstance(self.inimigo, Chefao):
+             item_drop = Equipamento("Espada do Rei Ogro", "arma", ataque=20)
+        
+        elif chance < 0.8: # 30% Chance de Poção
             tipo = random.choice(["vida", "mana"])
             qtd = 50 if tipo == "vida" else 20
             item_drop = Consumivel(f"Poção de {tipo.capitalize()}", tipo, qtd)
         
-        elif chance < 0.7: # 30% chance de Equipamento
+        else: # 20% Chance de Equipamento Comum
             if random.random() < 0.5:
-                # Arma
-                nomes = ["Espada de Ferro", "Machado Velho", "Adaga Cortante"]
-                item_drop = Equipamento(random.choice(nomes), "arma", ataque=random.randint(3, 8))
+                item_drop = Equipamento("Adaga de Goblin", "arma", ataque=5)
             else:
-                # Armadura
-                nomes = ["Colete de Couro", "Armadura Enferrujada", "Manto Mágico"]
-                item_drop = Equipamento(random.choice(nomes), "armadura", defesa=random.randint(2, 5))
-        
-        else:
-            print("O inimigo não tinha itens.")
-            return
+                item_drop = Equipamento("Escudo Quebrado", "armadura", defesa=3)
 
         if item_drop:
-            print(f"\n$$$ LOOT! Você encontrou: {item_drop.nome} $$$")
+            print(f"\n{Cor.AMARELO}$$$ LOOT! Você pegou: {item_drop.nome} $$${Cor.RESET}")
             p.inventario.append(item_drop)
-            
-            # Auto-equipar se for melhor (opcional, mas ajuda a testar)
-            if isinstance(item_drop, Equipamento):
-                print("Dica: Vá ao menu de inventário para equipar.")
+            Logger.registrar(f"Loot obtido: {item_drop.nome}")
