@@ -2,6 +2,7 @@ from __future__ import annotations
 from models.personagem import Personagem, Guerreiro, Mago, Arqueiro
 from models.missao import Missao
 from models.inimigo import Inimigo
+from utils.repositorio import Repositorio
 
 class Jogo:
     def __init__(self) -> None:
@@ -163,7 +164,7 @@ class Jogo:
         print("- Inimigos e recompensas: (em breve)")
         print("- Regras de combate: (em breve)")
 
-def _iniciar_missao_placeholder(self) -> None:
+    def _iniciar_missao_placeholder(self) -> None:
         # Verifica se o jogador existe (instanciado na etapa anterior)
         if not self.jogador:
             print("\n[ERRO] Crie um personagem antes de iniciar uma missão!")
@@ -221,9 +222,20 @@ def _iniciar_missao_placeholder(self) -> None:
         print(f"✔ Salvo (simulado) em: {self._ultimo_save}")
 
     def _salvar_nomeado(self) -> None:
-        nome = input("Nome do arquivo de save (ex.: meu_jogo.json): ").strip() or "save.json"
-        self._ultimo_save = nome
-        print(f"✔ Salvo (simulado) em: {self._ultimo_save}")
+        if not self.jogador:
+            print("Nenhum personagem para salvar! Crie um primeiro.")
+            return
+
+        nome_arquivo = input("Nome do arquivo de save (ex: save1): ").strip()
+        if not nome_arquivo:
+            nome_arquivo = "save_auto"
+
+        # 1. Converte o objeto jogador para dicionário
+        dados_para_salvar = self.jogador.to_dict()
+        
+        # 2. Usa o repositório para escrever no disco
+        repo = Repositorio()
+        repo.salvar(dados_para_salvar, nome_arquivo)
 
     def _ajuda_salvar(self) -> None:
         print("\nAjuda — Salvar")
@@ -259,12 +271,18 @@ def _iniciar_missao_placeholder(self) -> None:
             print("Nenhum save recente encontrado (simulado).")
 
     def _carregar_nomeado(self) -> None:
-        nome = input("Nome do arquivo para carregar (ex.: meu_jogo.json): ").strip()
-        if nome:
-            self._ultimo_load = nome
-            print(f"✔ Carregado (simulado) de: {self._ultimo_load}")
-        else:
-            print("Nome não informado.")
+        nome_arquivo = input("Nome do arquivo para carregar: ").strip()
+        
+        repo = Repositorio()
+        dados = repo.carregar(nome_arquivo)
+        
+        if dados:
+            # 3. Reconstrói o objeto jogador a partir dos dados
+            try:
+                self.jogador = Personagem.from_dict(dados)
+                print(f"✔ Personagem {self.jogador.nome} (Nível {self.jogador.nivel}) carregado!")
+            except Exception as e:
+                print(f"Erro ao reconstruir personagem: {e}")
 
     def _ajuda_carregar(self) -> None:
         print("\nAjuda — Carregar")
