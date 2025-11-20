@@ -4,22 +4,22 @@ import random
 from dataclasses import dataclass
 from utils.logger import Logger
 from .personagem import Personagem
-# Importando todas as variações de inimigos criadas
+# Importando todas as variações de inimigos
 from .inimigo import (
     Inimigo, 
-    Goblin, Lobo, Orc, ReiOgro,                  # Floresta
-    Ladrao, Cacador, Elfo, EnviadoCacada,        # Trilha
-    MorcegoGigante, Gargula, Kobold, VermeColossal, # Caverna
-    SoldadoZumbi, Ghoul, EspiritoSombrio, Lich   # Ruinas
+    Goblin, Lobo, Orc, ReiOgro,                  
+    Ladrao, Cacador, Elfo, EnviadoCacada,        
+    MorcegoGigante, Gargula, Kobold, VermeColossal, 
+    SoldadoZumbi, Ghoul, EspiritoSombrio, Lich   
 )
 from .item import Equipamento, Consumivel
 
-# --- Códigos de Cores para o Terminal ---
 class Cor:
     VERMELHO = '\033[91m'
     VERDE = '\033[92m'
     AMARELO = '\033[93m'
     AZUL = '\033[94m'
+    CIANO = '\033[96m' # Cor nova para Gelo
     RESET = '\033[0m'
 
 @dataclass
@@ -35,44 +35,30 @@ class Missao:
         self.titulo = f"Batalha contra {self.inimigo.nome}"
 
     def _gerar_inimigo(self, dif: str, cenario: str) -> Inimigo:
-        """
-        Seleciona o inimigo correto baseando-se no Cenário e na Dificuldade.
-        """
-        # Mapa de inimigos comuns por cenário
+        """Seleciona o inimigo correto baseando-se no Cenário e na Dificuldade."""
         mapa_comuns = {
             "Trilha":   [Ladrao, Cacador, Elfo],
             "Floresta": [Goblin, Lobo, Orc],
             "Caverna":  [Kobold, MorcegoGigante, Gargula],
             "Ruínas":   [SoldadoZumbi, Ghoul, EspiritoSombrio]
         }
-        
-        # Mapa de Chefes por cenário
         mapa_chefes = {
-            "Trilha": EnviadoCacada,
-            "Floresta": ReiOgro,
-            "Caverna": VermeColossal,
-            "Ruínas": Lich
+            "Trilha": EnviadoCacada, "Floresta": ReiOgro,
+            "Caverna": VermeColossal, "Ruínas": Lich
         }
 
-        # Recupera a lista (ou usa Floresta como fallback/padrão)
         lista_inimigos = mapa_comuns.get(cenario, [Goblin, Lobo, Orc])
         classe_chefe = mapa_chefes.get(cenario, ReiOgro)
         
         if dif == "Fácil":
-            # Escolhe entre os dois primeiros (mais fracos da área)
             return random.choice(lista_inimigos[:2])()
-            
         elif dif == "Média":
-            # Pode ser qualquer um dos comuns
             return random.choice(lista_inimigos)()
-            
         else: # Difícil
-            # 30% de chance de ser o Chefe da área
             if random.random() < 0.30:
                 print(f"{Cor.VERMELHO}!!! UM CHEFE APARECEU !!!{Cor.RESET}")
                 return classe_chefe()
             else:
-                # Se não for chefe, é um dos inimigos mais fortes (exclui o primeiro da lista)
                 return random.choice(lista_inimigos[1:])()
 
     def executar(self, p: Personagem) -> ResultadoMissao:
@@ -85,12 +71,61 @@ class Missao:
         time.sleep(1)
 
         turnos = 0
+        
+        # Dicionários de Status (Nome do status : Turnos restantes)
+        status_jogador = {"veneno": 0, "fogo": 0}
+        status_inimigo = {"fogo": 0, "congelado": 0, "atordoado": 0}
+
         while p.vivo and self.inimigo.vivo:
             turnos += 1
             self._mostrar_status(p, self.inimigo)
+            
+            # Mostra ícones de status se houver
+            stats_msg = []
+            if status_inimigo['fogo'] > 0: stats_msg.append(f"{Cor.AMARELO}🔥 Queimando{Cor.RESET}")
+            if status_inimigo['congelado'] > 0: stats_msg.append(f"{Cor.CIANO}❄️ Congelado{Cor.RESET}")
+            if stats_msg: print(f"Status Inimigo: {' '.join(stats_msg)}")
+
             print(f"\n--- Turno {turnos} ---")
 
-            # --- Turno do Jogador ---
+            # --- 1. PROCESSAR STATUS (DOTs) DO JOGADOR ---
+            if status_jogador["veneno"] > 0:
+                dano = 5
+                p._atrib.vida -= dano
+                status_jogador["veneno"] -= 1
+                print(f"{Cor.VERMELHO}☠️ O veneno te causou {dano} de dano!{Cor.RESET}")
+            
+            if status_jogador["fogo"] > 0:
+                dano = 8
+                p._atrib.vida -= dano
+                status_jogador["fogo"] -= 1
+                print(f"{Cor.AMARELO}🔥 Você está queimando! Sofreu {dano} de dano.{Cor.RESET}")
+
+            if not p.vivo: break
+
+            # --- 2. PROCESSAR STATUS (DOTs) DO INIMIGO ---
+            inimigo_perde_turno = False
+            
+            if status_inimigo["fogo"] > 0:
+                # Dano de queimadura baseado na vida máx do inimigo (min 5, max 20)
+                dano_burn = max(5, int(self.inimigo._atrib.vida_max * 0.05))
+                self.inimigo._atrib.vida -= dano_burn
+                status_inimigo["fogo"] -= 1
+                print(f"{Cor.AMARELO}🔥 {self.inimigo.nome} sofreu {dano_burn} por queimadura!{Cor.RESET}")
+
+            if status_inimigo["congelado"] > 0:
+                inimigo_perde_turno = True
+                status_inimigo["congelado"] -= 1
+                print(f"{Cor.CIANO}❄️ {self.inimigo.nome} está CONGELADO e não pode se mover!{Cor.RESET}")
+            
+            elif status_inimigo["atordoado"] > 0: # Else if, para não perder 2 turnos seguidos no mesmo print
+                inimigo_perde_turno = True
+                status_inimigo["atordoado"] -= 1
+                print(f"💫 {self.inimigo.nome} está ATORDOADO!")
+
+            if not self.inimigo.vivo: break
+
+            # --- 3. TURNO DO JOGADOR ---
             print("[1] Atacar")
             print("[2] Habilidade Especial")
             print("[3] Usar Item")
@@ -110,124 +145,128 @@ class Missao:
                 if dano > 0:
                     dano_causado = dano
                     msg_acao = msg
+                    
+                    # --- APLICAR STATUS BASEADO NA HABILIDADE USADA ---
+                    # Verifica palavras chaves na mensagem retornada pela classe
+                    msg_lower = msg.lower()
+                    
+                    # Mago: Bola de Fogo / Meteoro
+                    if "fogo" in msg_lower or "meteoro" in msg_lower:
+                        if random.random() < 0.5: # 50% de chance de queimar
+                            status_inimigo["fogo"] = 3 # Dura 3 turnos
+                            print(f"{Cor.AMARELO}>>> Você incendeia o inimigo! (Dano contínuo) <<<{Cor.RESET}")
+
+                    # Mago: Raio Congelante
+                    if "congelante" in msg_lower or "gelo" in msg_lower:
+                        if random.random() < 0.4: # 40% chance de congelar
+                            status_inimigo["congelado"] = 1 # Perde 1 turno
+                            print(f"{Cor.CIANO}>>> O inimigo congelou! (Perderá o próximo turno) <<<{Cor.RESET}")
+
+                    # Guerreiro/Outros: Atordoar (Ex: Grito ou Escudo)
+                    if "atordoar" in msg_lower or "esmagar" in msg_lower:
+                         if random.random() < 0.3:
+                            status_inimigo["atordoado"] = 1
+                            print(">>> O impacto atordoou o inimigo! <<<")
+
                 else:
                     print(f"{Cor.AMARELO}{msg}{Cor.RESET}")
-                    passou_turno = False # Não gasta o turno se falhar
+                    passou_turno = False
 
             elif acao == "3":
-                usou = self._menu_item(p)
-                if usou:
+                if self._menu_item(p):
                     dano_causado = 0
                     msg_acao = "usou um item"
                 else:
                     passou_turno = False
             
             elif acao == "4":
-                # Chance de fuga (mais difícil contra chefes)
-                chance_fuga = 0.4
-                if "Rei" in self.inimigo.nome or "Lich" in self.inimigo.nome or "Verme" in self.inimigo.nome:
-                    chance_fuga = 0.15
-                
-                if random.random() < chance_fuga:
-                    Logger.registrar(f"{p.nome} fugiu do {self.inimigo.nome}.")
-                    print(f"{Cor.VERDE}Você conseguiu escapar!{Cor.RESET}")
-                    return ResultadoMissao(False, "Fugiu da batalha.")
+                chance = 0.4 if "Rei" not in self.inimigo.nome else 0.15
+                if random.random() < chance:
+                    print(f"{Cor.VERDE}Você fugiu!{Cor.RESET}")
+                    return ResultadoMissao(False, "Fugiu.")
                 else:
-                    print(f"{Cor.VERMELHO}Falha ao fugir! O inimigo bloqueou o caminho.{Cor.RESET}")
+                    print(f"{Cor.VERMELHO}Falha ao fugir!{Cor.RESET}")
             
             else:
                 print("Opção inválida.")
                 passou_turno = False
 
-            # --- Aplicação de Dano do Jogador ---
+            # --- 4. APLICAÇÃO DO DANO NO INIMIGO ---
             if passou_turno:
                 if dano_causado > 0:
                     real = self.inimigo.receber_dano(dano_causado)
                     print(f"--> Você {msg_acao} causando {Cor.VERDE}{real}{Cor.RESET} de dano!")
                     Logger.log_combate(turnos, p.nome, self.inimigo.nome, real)
                 
-                if not self.inimigo.vivo:
-                    break
+                if not self.inimigo.vivo: break
 
-                # --- Turno do Inimigo (IA Atualizada) ---
+                # --- 5. TURNO DO INIMIGO ---
                 time.sleep(0.5)
                 
-                # O inimigo decide se usa Skill ou Ataque Normal
-                dano_ini, msg_ini = self.inimigo.realizar_acao()
-                
-                # Pequena variação aleatória no dano final (±10%)
-                dano_var = int(dano_ini * random.uniform(0.9, 1.1))
-                
-                recebido = p.receber_dano(dano_var)
-                
-                print(f"<-- O {self.inimigo.nome} {msg_ini}! Você sofreu {Cor.VERMELHO}{recebido}{Cor.RESET} de dano.")
-                Logger.log_combate(turnos, self.inimigo.nome, p.nome, recebido)
+                if inimigo_perde_turno:
+                    print(f"{Cor.CIANO}O {self.inimigo.nome} não pode atacar neste turno!{Cor.RESET}")
+                else:
+                    # Inimigo age
+                    dano_ini, msg_ini = self.inimigo.realizar_acao()
+                    
+                    # -- Inimigo aplicando status no Jogador --
+                    if "Zumbi" in self.inimigo.nome or "Aranha" in self.inimigo.nome:
+                        if random.random() < 0.2 and status_jogador["veneno"] == 0:
+                            status_jogador["veneno"] = 3
+                            print(f"{Cor.VERMELHO}!!! O inimigo te envenenou! !!!{Cor.RESET}")
+                    
+                    if "Lich" in self.inimigo.nome or "Dragão" in self.inimigo.nome:
+                         if random.random() < 0.2 and status_jogador["fogo"] == 0:
+                            status_jogador["fogo"] = 3
+                            print(f"{Cor.AMARELO}!!! O inimigo te incendiou! !!!{Cor.RESET}")
 
-        # --- Resultado Final ---
+                    dano_var = int(dano_ini * random.uniform(0.9, 1.1))
+                    recebido = p.receber_dano(dano_var)
+                    
+                    print(f"<-- O {self.inimigo.nome} {msg_ini}! Você sofreu {Cor.VERMELHO}{recebido}{Cor.RESET} de dano.")
+                    Logger.log_combate(turnos, self.inimigo.nome, p.nome, recebido)
+
+        # --- FIM DO COMBATE ---
         if p.vivo:
             print(f"\n{Cor.VERDE}VITÓRIA! O inimigo caiu.{Cor.RESET}")
-            
-            # Ganha XP
-            xp_ganho = self.inimigo.xp_recompensa
-            msgs_level = p.ganhar_xp(xp_ganho)
-            print(f"Ganhou {Cor.AMARELO}{xp_ganho} XP{Cor.RESET}.")
-            
-            for msg in msgs_level:
-                print(f"{Cor.AZUL}{msg}{Cor.RESET}")
-            
-            Logger.registrar(f"Vitória. Ganhou {xp_ganho} XP.")
-            
-            # Drop de Loot (Novo Sistema)
+            xp = self.inimigo.xp_recompensa
+            msgs = p.ganhar_xp(xp)
+            print(f"Ganhou {Cor.AMARELO}{xp} XP{Cor.RESET}.")
+            for m in msgs: print(f"{Cor.AZUL}{m}{Cor.RESET}")
             self._dropar_loot(p)
-            
-            return ResultadoMissao(True, "Vitória Conquistada.")
+            return ResultadoMissao(True, "Vitória.")
         else:
-            print(f"\n{Cor.VERMELHO}DERROTA... Você caiu em combate.{Cor.RESET}")
-            Logger.registrar(f"Derrota. Personagem {p.nome} morreu.")
-            return ResultadoMissao(False, "Morto em combate.")
+            print(f"\n{Cor.VERMELHO}DERROTA...{Cor.RESET}")
+            return ResultadoMissao(False, "Derrota.")
 
     def _mostrar_status(self, p, e):
         print(f"\n{Cor.AZUL}{p.nome}{Cor.RESET}: {p.barra_hp()} | MP: {p._atrib.mana}")
         print(f"{Cor.VERMELHO}{e.nome}{Cor.RESET}: {e.barra_hp()}")
 
     def _menu_item(self, p: Personagem) -> bool:
-        """Lista apenas consumíveis para uso em batalha."""
         potions = [i for i in p.inventario if isinstance(i, Consumivel)]
-        
         if not potions:
-            print("Você não tem itens utilizáveis em combate!")
+            print("Sem poções!")
             return False
-        
-        print("\n--- Itens Disponíveis ---")
+        print("\n--- Itens ---")
         for i, item in enumerate(potions):
-            print(f"[{i+1}] {item.nome} (Efeito: {item.valor_efeito})")
+            print(f"[{i+1}] {item.nome}")
         print("[0] Cancelar")
-        
         try:
-            op = int(input("Usar qual item? > "))
+            op = int(input("> "))
             if op > 0 and op <= len(potions):
                 item = potions[op-1]
-                msg = item.usar(p)
-                print(f"{Cor.VERDE}{msg}{Cor.RESET}")
-                Logger.registrar(f"Usou item: {item.nome}")
-                
+                print(f"{Cor.VERDE}{item.usar(p)}{Cor.RESET}")
                 p.inventario.remove(item)
                 return True
-        except ValueError:
-            pass
+        except: pass
         return False
 
     def _dropar_loot(self, p: Personagem):
-        """Gera recompensa baseada no loot específico do inimigo."""
-        print(f"\nVerificando os espólios de {self.inimigo.nome}...")
-        time.sleep(0.5)
-        
-        itens_dropados = self.inimigo.gerar_loot()
-        
-        if not itens_dropados:
-            print("Nada de valor encontrado.")
-        else:
-            for item in itens_dropados:
-                print(f"{Cor.AMARELO}$$$ LOOT! Você pegou: {item.nome} $$${Cor.RESET}")
+        itens = self.inimigo.gerar_loot()
+        if itens:
+            for item in itens:
+                print(f"{Cor.AMARELO}LOOT! {item.nome}{Cor.RESET}")
                 p.inventario.append(item)
-                Logger.registrar(f"Loot obtido: {item.nome}")
+        else:
+            print("Sem loot.")
