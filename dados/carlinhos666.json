@@ -1,0 +1,22 @@
+{
+    "classe": "Guerreiro",
+    "nome": "carlinhos",
+    "nivel": 1,
+    "xp": 0,
+    "atributos": {
+        "vida": 135,
+        "ataque": 17,
+        "defesa": 6,
+        "mana": 25,
+        "vida_max": 135
+    },
+    "skills": [
+        "Golpe Devastador"
+    ],
+    "passivas": [],
+    "inventario": [],
+    "equipamentos": {
+        "arma": null,
+        "armadura": null
+    }
+}

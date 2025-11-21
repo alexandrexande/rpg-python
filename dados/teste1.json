@@ -1,0 +1,55 @@
+{
+    "classe": "Guerreiro",
+    "nome": "ksl",
+    "nivel": 3,
+    "xp": 220,
+    "atributos": {
+        "vida": 116,
+        "ataque": 19,
+        "defesa": 7,
+        "mana": 30,
+        "vida_max": 150
+    },
+    "inventario": [
+        {
+            "nome": "Poção de Vida",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 50,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Escudo Quebrado",
+            "valor": 50,
+            "slot": "armadura",
+            "ataque_bonus": 0,
+            "defesa_bonus": 3,
+            "classe_item": "equip"
+        },
+        {
+            "nome": "Poção de Vida",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 50,
+            "classe_item": "pot"
+        }
+    ],
+    "equipamentos": {
+        "arma": {
+            "nome": "Adaga de Goblin",
+            "valor": 50,
+            "slot": "arma",
+            "ataque_bonus": 5,
+            "defesa_bonus": 0,
+            "classe_item": "equip"
+        },
+        "armadura": {
+            "nome": "Escudo Quebrado",
+            "valor": 50,
+            "slot": "armadura",
+            "ataque_bonus": 0,
+            "defesa_bonus": 3,
+            "classe_item": "equip"
+        }
+    }
+}

@@ -1,0 +1,145 @@
+{
+    "classe": "Mago",
+    "nome": "maiconjackson",
+    "nivel": 6,
+    "xp": 595,
+    "atributos": {
+        "vida": 110,
+        "ataque": 11,
+        "defesa": 2,
+        "mana": 265,
+        "vida_max": 118
+    },
+    "skills": [
+        "Bola de Fogo"
+    ],
+    "passivas": [
+        "Mente Clara"
+    ],
+    "inventario": [
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Capa de Viagem",
+            "valor": 50,
+            "slot": "armadura",
+            "ataque_bonus": 0,
+            "defesa_bonus": 5,
+            "classe_item": "equip"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Essência de Mana",
+            "valor": 10,
+            "tipo": "mana",
+            "valor_efeito": 50,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Elixir de Agilidade",
+            "valor": 10,
+            "tipo": "mana",
+            "valor_efeito": 30,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        },
+        {
+            "nome": "Poção Pequena",
+            "valor": 10,
+            "tipo": "vida",
+            "valor_efeito": 20,
+            "classe_item": "pot"
+        }
+    ],
+    "equipamentos": {
+        "arma": {
+            "nome": "Espada Antiga",
+            "valor": 50,
+            "slot": "arma",
+            "ataque_bonus": 8,
+            "defesa_bonus": 0,
+            "classe_item": "equip"
+        },
+        "armadura": {
+            "nome": "Elmo de Pedra",
+            "valor": 50,
+            "slot": "armadura",
+            "ataque_bonus": 0,
+            "defesa_bonus": 10,
+            "classe_item": "equip"
+        }
+    }
+}
