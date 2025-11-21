@@ -280,12 +280,21 @@ class Jogo:
             if opcao == "1":
                 print("\nVocê senta perto do fogo, come algo e medita...")
                 # Recupera Vida (Cura total)
-                recuperado = self.jogador.curar(9999)
+                recuperado_vida = self.jogador.curar(9999)
                 # Recupera Mana (Simples adição, já que não temos mana_max explícito na base)
-                self.jogador._atrib.mana += 50 
+                dados_classe = ARVORE_EVOLUCAO.get(self.jogador.__class__.__name__, {})
+                stats_base = dados_classe.get("status_base", {})
+                ganho_mana_por_nivel = stats_base.get("mana", 5)          
+                mana_inicial_map = {"Guerreiro": 5, "Mago": 15, "Arqueiro": 8}
+                mana_base_ini = mana_inicial_map.get(self.jogador.__class__.__name__, 10)
+                mana_max_estimada = mana_base_ini + (self.jogador.nivel * ganho_mana_por_nivel)
+                recuperar_mana = 50
+                mana_anterior = self.jogador._atrib.mana
+                self.jogador._atrib.mana = min(mana_max_estimada, self.jogador._atrib.mana + recuperar_mana)
                 
+                recuperado_mana = self.jogador._atrib.mana - mana_anterior      
                 time.sleep(1)
-                print(f"{Cor.VERDE}Recuperou {recuperado} HP e 50 MP!{Cor.RESET}")
+                print(f"{Cor.VERDE}Recuperou {recuperado_vida} HP e {recuperado_mana} MP!{Cor.RESET}")
                 print("Preparando para a próxima viagem...")
                 rodada += 1
                 time.sleep(1)
